@@ -261,7 +261,7 @@
   .sheet-actions .btn-primary{margin-top:0;flex:1}
   .sheet-actions .btn-danger{padding:0 18px}
 
-  .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);border-radius:12px;padding:11px 16px;font-size:14px;font-weight:500;max-width:calc(100vw - 40px);text-align:center}
+  .toast{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);border-radius:12px;padding:11px 16px;font-size:14px;font-weight:500;max-width:calc(100vw - 40px);text-align:center}
 
   /* ============ STATUS OFFLINE ============ */
   .netbar{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 20px 6px;padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:600;background:var(--surface-2);color:var(--ink);text-align:center}
@@ -270,6 +270,41 @@
   .netbar.pend{background:var(--mark);color:var(--mark-fg);cursor:pointer}
   .netbar.pend::before{background:var(--mark-fg)}
   .pbadge{display:inline-block;margin-right:6px;padding:0 7px;border-radius:99px;background:var(--mark);color:var(--mark-fg);font-size:11.5px;font-weight:700;line-height:1.6}
+
+  /* ============ GESER BARIS, TOAST AKSI, SAMBUTAN, TEMPO ANGGARAN ============ */
+  .swipe{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .swipe .tx{position:relative;border-bottom:0;touch-action:pan-y;user-select:none;-webkit-user-select:none;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+  .swipe .tx.dragging{transition:none}
+  .swipe.sw .tx{background:var(--bg)}
+  .swipe-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 22px;color:#fff;font-weight:650;font-size:14.5px;visibility:hidden}
+  .swipe-bg span{transition:transform .12s}
+  .swipe.sw .swipe-bg{visibility:visible}
+  .swipe[data-dir="right"] .swipe-bg{background:var(--brand)}
+  .swipe[data-dir="left"] .swipe-bg{background:var(--exp)}
+  [data-theme="dark"] .swipe[data-dir="left"] .swipe-bg{color:#2B0A07}
+  .swipe[data-dir="right"] .sa-del,.swipe[data-dir="left"] .sa-edit{visibility:hidden}
+  .swipe.armed .swipe-bg span{transform:scale(1.12);font-weight:750}
+  .swipe-hint{font-size:13px;color:var(--muted);margin:14px 0 0}
+
+  .toast{display:flex;align-items:center;justify-content:center;gap:14px}
+  .toast button{flex:none;font-weight:700;color:var(--mark);text-decoration:underline;text-underline-offset:3px;padding:6px 2px}
+  [data-theme="dark"] .toast button{color:#2340D9}
+
+  .welcome{margin-top:28px}
+  .wl-lead{color:var(--muted);margin:6px 0 18px;max-width:44ch}
+  .steps{list-style:none;counter-reset:st;display:grid;gap:16px}
+  .steps li{counter-increment:st;display:grid;grid-template-columns:28px 1fr;column-gap:12px;align-items:start}
+  .steps li::before{content:counter(st);grid-row:1 / span 2;width:28px;height:28px;border-radius:50%;background:var(--mark);color:var(--mark-fg);display:grid;place-items:center;font-weight:750;font-size:14px}
+  .steps b{font-weight:650;line-height:28px}
+  .steps span{grid-column:2;color:var(--muted);font-size:13.5px;margin-top:-2px}
+  .welcome .btn-primary{margin-top:22px}
+
+  .barwrap{position:relative;margin-top:11px}
+  .barwrap .bar{margin-top:0}
+  .pace{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;border-radius:2px;background:var(--ink);opacity:.75}
+  .bud .hint+.hint{margin-top:2px}
+  .bud .hint.pace-ok{color:var(--inc)}
+  .bud .hint.pace-over{color:var(--exp)}
 
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
@@ -351,7 +386,7 @@
         </div>
       </div>
 
-      <div class="sec-head">
+      <div id="recent-head" class="sec-head">
         <h2 class="sec">Transaksi terakhir</h2>
         <button class="link" onclick="switchTab('transaksi')">Lihat semua
           <svg viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></svg>
@@ -373,6 +408,7 @@
         <button data-f="expense" onclick="setTxFilter('expense')">Keluar</button>
         <button data-f="income" onclick="setTxFilter('income')">Masuk</button>
       </div>
+      <p id="swipe-hint" class="swipe-hint hidden">Geser baris ke kiri untuk menghapus, ke kanan untuk mengubah.</p>
       <div id="tx-list"></div>
     </section>
 
@@ -405,7 +441,7 @@
       <div class="sec-head" style="margin-top:12px"><h2 class="sec">Strategi bulan ini</h2></div>
       <div id="strat-cards"></div>
       <div class="sec-head"><h2 class="sec">Anggaran per kategori</h2></div>
-      <p class="sec-sub">Ketik nominal batas bulanan. Tersimpan otomatis saat kamu selesai mengetik.</p>
+      <p class="sec-sub">Ketik nominal batas bulanan. Tersimpan otomatis saat kamu selesai mengetik. Garis di bar menunjukkan jatah wajar sampai hari ini.</p>
       <div id="budget-list"></div>
     </section>
 
@@ -576,8 +612,17 @@ function hexA(hex, a) {
   const n = parseInt(safeColor(hex).slice(1), 16);
   return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
 }
-function toast(msg, ms) {
-  const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
+// action (opsional): { label, fn }, misalnya tombol "Urungkan" di samping pesan
+function toast(msg, ms, action) {
+  const t = $('toast');
+  t.textContent = msg;
+  if (action) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = action.label;
+    b.onclick = () => { clearTimeout(t._h); t.classList.add('hidden'); action.fn(); };
+    t.appendChild(b);
+  }
+  t.classList.remove('hidden');
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.add('hidden'), ms || 2200);
 }
 
@@ -881,8 +926,10 @@ function renderDashboard() {
   }
   renderStrip(now, tx, daysInMonth);
 
-  $('dash-recent').innerHTML = groupHTML(state.transactions.slice(0, 8)) ||
-    '<div class="empty"><p>Belum ada transaksi. Tekan + untuk mencatat yang pertama.</p></div>';
+  const first = !state.transactions.length;       // akun baru: tampilkan sambutan, bukan daftar kosong
+  $('dash-recent').innerHTML = groupHTML(state.transactions.slice(0, 8)) || welcomeHTML();
+  $('recent-head').classList.toggle('hidden', first);
+  if (first) $('hero-cta').classList.add('hidden');
 }
 
 // ================= DAFTAR TRANSAKSI =================
@@ -891,10 +938,11 @@ function txRowHTML(t) {
   const sub = state.subcategories.find(s => s.id === t.subcategory_id);
   const second = [sub ? sub.name : '', t.note].filter(Boolean).join(', ');
   const isIn = t.type === 'income';
-  return '<div class="tx" onclick="openTxModal(\'' + t.id + '\')">'
+  return '<div class="swipe" data-id="' + t.id + '"><div class="swipe-bg"><span class="sa-edit">Ubah</span><span class="sa-del">Hapus</span></div>'
+    + '<div class="tx" onclick="openTxModal(\'' + t.id + '\')">'
     + '<div class="tile" style="background:' + hexA(c.color, .16) + '">' + esc(c.icon) + '</div>'
     + '<div class="meta"><div class="t1">' + esc(c.name) + '</div>' + (second || t._pending ? '<div class="t2">' + (t._pending ? '<span class="pbadge">Belum terkirim</span>' : '') + esc(second) + '</div>' : '') + '</div>'
-    + '<div class="amt num ' + (isIn ? 'in' : '') + '">' + (isIn ? '+' : '−') + nf.format(Number(t.amount)) + '</div></div>';
+    + '<div class="amt num ' + (isIn ? 'in' : '') + '">' + (isIn ? '+' : '−') + nf.format(Number(t.amount)) + '</div></div></div>';
 }
 function groupHTML(list) {
   const groups = {};
@@ -917,7 +965,10 @@ function renderTxList() {
     + '<div><p class="k">Total keluar</p><p class="v num">' + fmt(sumBy(all, 'expense')) + '</p></div>';
   document.querySelectorAll('#tx-filter button').forEach(b => b.classList.toggle('on', b.dataset.f === state.txFilter));
   const list = all.filter(t => state.txFilter === 'all' || t.type === state.txFilter);
-  $('tx-list').innerHTML = groupHTML(list) || '<div class="empty"><p>Tidak ada transaksi di bulan ini.</p></div>';
+  const emptyMsg = all.length ? 'Tidak ada transaksi ' + (state.txFilter === 'income' ? 'masuk' : 'keluar') + ' di bulan ini.' : 'Belum ada transaksi di bulan ini.';
+  $('tx-list').innerHTML = groupHTML(list)
+    || '<div class="empty"><p>' + emptyMsg + '</p>' + (all.length ? '' : '<button class="btn btn-primary" onclick="openTxModal()">Catat transaksi</button>') + '</div>';
+  $('swipe-hint').classList.toggle('hidden', !list.length || swipedBefore());
 }
 
 // ================= SHEET TRANSAKSI =================
@@ -1005,19 +1056,49 @@ async function saveTx() {
     queueTx(id, payload);
   } finally { btn.disabled = false; }
 }
-async function deleteTx() {
-  if (!confirm('Hapus transaksi ini?')) return;
-  const q = getQueue();
-  if (q.some(x => x.id === state.editingId)) {   // belum terkirim: cukup dibuang dari antrean
-    setQueue(q.filter(x => x.id !== state.editingId));
-    state.transactions = state.transactions.filter(t => t.id !== state.editingId);
-    closeTxModal(); renderAll(); updateNetUI(); toast('Terhapus');
-    return;
+// Hapus tanpa pop-up konfirmasi. Sebagai gantinya muncul "Urungkan" selama beberapa detik.
+const canRemoveTx = id => getQueue().some(x => x.id === id) || (navigator.onLine && !state.offlineMode);
+async function removeTx(id) {
+  const row = state.transactions.find(t => t.id === id);
+  if (!row) return false;
+  const q = getQueue(), queued = q.find(x => x.id === id);
+  if (queued) {                                   // belum terkirim: cukup dibuang dari antrean
+    setQueue(q.filter(x => x.id !== id));
+    state.transactions = state.transactions.filter(t => t.id !== id);
+    renderAll(); updateNetUI();
+    toast('Terhapus', 6000, { label: 'Urungkan', fn: () => {
+      const q2 = getQueue(); q2.push(queued);
+      if (setQueue(q2)) { mergePending(); renderAll(); updateNetUI(); toast('Dikembalikan'); syncQueue(); }
+    } });
+    return true;
   }
-  if (!needOnline('Menghapus transaksi')) return;
-  const { error } = await sb.from('transactions').delete().eq('id', state.editingId);
-  if (error) { toast('Gagal menghapus: ' + error.message, 4500); return; }
-  closeTxModal(); await loadData(); renderAll(); toast('Terhapus');
+  if (!needOnline('Menghapus transaksi')) return false;
+  const { error } = await sb.from('transactions').delete().eq('id', id);
+  if (error) { toast(isNetErr(error) ? 'Tidak ada koneksi. Belum terhapus.' : 'Gagal menghapus: ' + error.message, 4500); return false; }
+  await loadData(); renderAll();
+  toast('Terhapus', 6000, { label: 'Urungkan', fn: () => restoreTx(row) });
+  return true;
+}
+// Kembalikan transaksi yang baru dihapus (id dan tanggal catat sama). Kalau sinyal putus, masuk antrean offline.
+async function restoreTx(row) {
+  const { id, created_at, ...payload } = row;
+  if (navigator.onLine && !state.offlineMode) {
+    let { error } = await sb.from('transactions').insert({ ...payload, id, created_at });
+    if (error && error.code === '23503') {        // kategori ikut terhapus saat itu
+      ({ error } = await sb.from('transactions').insert({ ...payload, id, created_at, category_id: null, subcategory_id: null }));
+    }
+    if (!error) { await loadData(); renderAll(); toast('Dikembalikan'); return; }
+    if (!isNetErr(error)) { toast('Gagal mengembalikan: ' + error.message, 4500); return; }
+  }
+  const q = getQueue(); q.push({ id, payload, created_at });
+  if (setQueue(q)) { mergePending(); renderAll(); updateNetUI(); toast('Dikembalikan. Terkirim saat online.', 3200); }
+}
+async function deleteTx() {
+  const id = state.editingId;
+  if (!id) return;
+  if (!canRemoveTx(id)) { needOnline('Menghapus transaksi'); return; }
+  closeTxModal();
+  await removeTx(id);
 }
 
 // ================= GRAFIK =================
@@ -1154,12 +1235,16 @@ function renderStrategy() {
     const spent = spentOf(c.id), b = budgetFor(c.id, ym), amt = b ? Number(b.amount) : 0;
     const pct = amt > 0 ? Math.min(100, Math.round(spent / amt * 100)) : 0;
     const cls = pct >= 100 ? 'over' : pct >= 75 ? 'warn' : '';
+    const paceAt = Math.round(now.getDate() / daysInMonth * 1000) / 10;      // posisi jatah wajar sampai hari ini (%)
+    const diff = spent - amt * now.getDate() / daysInMonth;
     return '<div class="bud"><div class="bud-top">'
       + '<div class="tile" style="background:' + hexA(c.color, .16) + '">' + esc(c.icon) + '</div>'
       + '<div class="name">' + esc(c.name) + '</div>'
       + '<input id="budget-' + c.id + '" class="input num" type="number" min="0" inputmode="numeric" placeholder="Atur batas" value="' + (amt || '') + '" onchange="saveBudget(\'' + c.id + '\')" aria-label="Anggaran ' + esc(c.name) + '"></div>'
       + (amt > 0
-        ? '<div class="bar ' + cls + '"><span style="width:' + pct + '%"></span></div><p class="hint">' + fmtShort(spent) + ' dari ' + fmtShort(amt) + ', ' + pct + '%' + (pct >= 100 ? ' <b>Melebihi anggaran</b>' : '') + '</p>'
+        ? '<div class="barwrap"><div class="bar ' + cls + '"><span style="width:' + pct + '%"></span></div><i class="pace" style="left:' + paceAt + '%" aria-hidden="true"></i></div>'
+          + '<p class="hint">' + fmtShort(spent) + ' dari ' + fmtShort(amt) + ', ' + pct + '%' + (pct >= 100 ? ' <b>Melebihi anggaran</b>' : '') + '</p>'
+          + '<p class="hint ' + (diff > 0 ? 'pace-over' : 'pace-ok') + '">' + (diff > 0 ? 'Lebih ' + fmtShort(diff) : 'Hemat ' + fmtShort(-diff)) + ' dari jatah sampai hari ini.</p>'
         : '') + '</div>';
   }).join('') : '<div class="empty"><p>Belum ada kategori pengeluaran.</p><button class="linkbtn" onclick="switchTab(\'kategori\')">Buat kategori</button></div>';
 }
@@ -1261,6 +1346,74 @@ async function bootApp() {
 applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxModal(); });
 ['auth-email', 'auth-pass'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); }));
+
+// ================= SAMBUTAN AKUN BARU =================
+function welcomeHTML() {
+  const noCats = !state.categories.length;
+  return '<div class="welcome"><h2 class="sec">Mulai dari sini</h2>'
+    + '<p class="wl-lead">UangKu menghitung berapa uang yang aman kamu pakai tiap hari. Caranya, catat dulu uang yang masuk dan keluar.</p>'
+    + '<ol class="steps">'
+    + (noCats ? '<li><b>Buat kategori</b><span>Paket standar sudah cukup untuk mulai. Bisa kamu ubah nanti.</span></li>' : '')
+    + '<li><b>Catat pemasukan</b><span>Uang saku, gaji, atau kiriman bulan ini.</span></li>'
+    + '<li><b>Catat pengeluaran</b><span>Cukup nominal dan kategori. Subkategori dan catatan boleh dikosongkan.</span></li>'
+    + '<li><b>Lihat sisa aman per hari</b><span>Angkanya muncul di kartu biru di atas.</span></li>'
+    + '</ol>'
+    + (noCats ? '<button class="btn btn-primary" onclick="seedDefaults()">Buat kategori standar</button>'
+              : '<button class="btn btn-primary" onclick="openTxModal(null,\'income\')">Catat pemasukan pertama</button>')
+    + '</div>';
+}
+
+// ================= GESER BARIS TRANSAKSI =================
+// Geser kiri = hapus (bisa diurungkan), geser kanan = ubah. Dilepas sebelum ambang batas: baris kembali.
+const swipedBefore = () => { try { return localStorage.getItem('uangku-swiped') === '1'; } catch (e) { return false; } };
+const hideSwipeHint = () => { const h = $('swipe-hint'); if (h) h.classList.add('hidden'); };
+(function () {
+  let sw = null, suppressClick = false;
+  const THRESH = 88, MAXDRAG = 150;
+  function reset(s, instant) {
+    s.row.style.transform = '';
+    setTimeout(() => { s.wrap.classList.remove('sw', 'armed'); s.wrap.removeAttribute('data-dir'); s.row.classList.remove('dragging'); }, instant ? 0 : 230);
+  }
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const row = e.target.closest('.swipe > .tx');
+    if (!row || sw) return;
+    sw = { row, wrap: row.parentElement, x0: e.clientX, y0: e.clientY, dx: 0, drag: false, id: e.pointerId };
+  });
+  document.addEventListener('pointermove', e => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dx = e.clientX - sw.x0, dy = e.clientY - sw.y0;
+    if (!sw.drag) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }      // itu scroll, bukan geser
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      sw.drag = true; sw.row.classList.add('dragging'); sw.wrap.classList.add('sw');
+      try { sw.row.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    sw.dx = Math.max(-MAXDRAG, Math.min(MAXDRAG, dx));
+    sw.row.style.transform = 'translateX(' + sw.dx + 'px)';
+    sw.wrap.dataset.dir = sw.dx < 0 ? 'left' : 'right';
+    sw.wrap.classList.toggle('armed', Math.abs(sw.dx) >= THRESH);
+  });
+  async function finish(e, cancelled) {
+    if (!sw || (e && e.pointerId !== sw.id)) return;
+    const s = sw; sw = null;
+    if (!s.drag) return;
+    suppressClick = true; setTimeout(() => { suppressClick = false; }, 60);
+    s.row.classList.remove('dragging');
+    const id = s.wrap.dataset.id;
+    if (cancelled || Math.abs(s.dx) < THRESH) { reset(s); return; }
+    try { localStorage.setItem('uangku-swiped', '1'); } catch (_) {}
+    hideSwipeHint();
+    if (s.dx > 0) { reset(s, true); openTxModal(id); return; }
+    if (!canRemoveTx(id)) { needOnline('Menghapus transaksi'); reset(s); return; }
+    s.row.style.transform = 'translateX(-105%)';
+    await new Promise(r => setTimeout(r, 180));
+    if (!(await removeTx(id))) reset(s);
+  }
+  document.addEventListener('pointerup', e => finish(e, false));
+  document.addEventListener('pointercancel', e => finish(e, true));
+  document.addEventListener('click', e => { if (suppressClick) { e.stopPropagation(); e.preventDefault(); } }, true);
+})();
 
 // ================= OFFLINE & PWA =================
 // Keluar dari mode offline: pulihkan sesi login (diulang beberapa kali karena sinyal yang baru kembali sering belum stabil)
