@@ -1,0 +1,19 @@
+{
+  "name": "UangKu — Catatan Keuangan",
+  "short_name": "UangKu",
+  "description": "Catat uang harian dan lihat sisa aman per hari. Tanpa iklan, data milikmu sendiri.",
+  "lang": "id",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F7FA",
+  "theme_color": "#F6F7FA",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

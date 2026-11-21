@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#F6F7FA">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="UangKu">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>UangKu — Catatan Keuangan</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FFE14D'/%3E%3Ctext x='16' y='24' font-size='22' font-weight='800' text-anchor='middle' fill='%2310163A' font-family='Arial,sans-serif'%3EU%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -259,6 +263,14 @@
 
   .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);border-radius:12px;padding:11px 16px;font-size:14px;font-weight:500;max-width:calc(100vw - 40px);text-align:center}
 
+  /* ============ STATUS OFFLINE ============ */
+  .netbar{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 20px 6px;padding:8px 12px;border-radius:10px;font-size:13.5px;font-weight:600;background:var(--surface-2);color:var(--ink);text-align:center}
+  .netbar::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+  .netbar.off::before{background:var(--exp)}
+  .netbar.pend{background:var(--mark);color:var(--mark-fg);cursor:pointer}
+  .netbar.pend::before{background:var(--mark-fg)}
+  .pbadge{display:inline-block;margin-right:6px;padding:0 7px;border-radius:99px;background:var(--mark);color:var(--mark-fg);font-size:11.5px;font-weight:700;line-height:1.6}
+
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   }
@@ -318,6 +330,8 @@
       </button>
     </div>
   </header>
+
+  <div id="net-chip" class="netbar hidden" role="status" onclick="syncQueue()"></div>
 
   <main>
 
@@ -596,6 +610,7 @@ function togglePass() { const i = $('auth-pass'); i.type = i.type === 'password'
 async function submitAuth() {
   const email = $('auth-email').value.trim(), pass = $('auth-pass').value;
   if (!/^\S+@\S+\.\S+$/.test(email) || pass.length < 6) { authMsg('Isi email yang valid dan password minimal 6 karakter.', 'err'); return; }
+  if (!navigator.onLine) { authMsg('Masuk dan daftar butuh internet. Coba lagi saat online.', 'err'); return; }
   const btn = $('auth-submit'); btn.disabled = true;
   $('resend-btn').classList.add('hidden'); authMsg('');
   try {
@@ -622,42 +637,178 @@ async function resendConfirm() {
   const { error } = await sb.auth.resend({ type: 'signup', email });
   authMsg(error ? error.message : 'Email konfirmasi dikirim ulang. Cek inbox dan folder spam.', error ? 'err' : 'ok');
 }
-async function signOut() { await sb.auth.signOut(); location.reload(); }
+async function signOut() {
+  const n = state.session ? getQueue().length : 0;
+  if (n && !confirm('Ada ' + n + ' transaksi yang belum terkirim. Tetap keluar? Catatan itu tetap tersimpan di HP dan terkirim saat kamu masuk lagi.')) return;
+  try {
+    localStorage.removeItem('uangku-last-user');
+    if (state.session) localStorage.removeItem('uangku-cache-' + state.session.user.id);
+  } catch (e) {}
+  try { await sb.auth.signOut(); } catch (e) {}
+  // Kalau sedang offline, signOut tidak bisa menghubungi server: hapus sesi lokal secara manual
+  try { Object.keys(localStorage).filter(k => /^sb-.*-auth-token/.test(k)).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  location.reload();
+}
+
+const lastUser = () => { try { return localStorage.getItem('uangku-last-user'); } catch (e) { return null; } };
+function showApp() { $('login-view').classList.add('hidden'); $('app-view').classList.remove('hidden'); }
+function showLogin() { $('login-view').classList.remove('hidden'); $('app-view').classList.add('hidden'); }
 
 sb.auth.onAuthStateChange((_event, session) => {
-  state.session = session;
   $('splash').classList.add('hidden');
   if (session) {
-    $('login-view').classList.add('hidden'); $('app-view').classList.remove('hidden');
+    state.session = session; state.offlineMode = false;
+    try { localStorage.setItem('uangku-last-user', session.user.id); } catch (e) {}
+    showApp();
     if (state.bootedFor !== session.user.id) {
       state.bootedFor = session.user.id;
       setTimeout(bootApp, 0); // jangan panggil Supabase langsung di dalam callback ini
+    } else {
+      setTimeout(async () => { await syncQueue(); if (state.fromCache) { await loadData(); renderAll(); } }, 0);
     }
+  } else if (state.offlineMode) {
+    // masih dalam mode offline: abaikan
+  } else if (!navigator.onLine && lastUser()) {
+    // Tidak ada internet untuk memperbarui sesi login: buka app dengan data yang tersimpan di HP
+    state.session = { user: { id: lastUser() } }; state.offlineMode = true;
+    showApp();
+    if (state.bootedFor !== lastUser()) { state.bootedFor = lastUser(); setTimeout(bootApp, 0); }
   } else {
-    state.bootedFor = null;
-    $('login-view').classList.remove('hidden'); $('app-view').classList.add('hidden');
+    state.session = null; state.bootedFor = null; showLogin();
   }
 });
 
+// Kalau SDK menunggu internet terlalu lama (sesi kedaluwarsa saat offline, bisa sampai ~25 detik),
+// jangan biarkan layar splash menggantung: buka app dari data di HP.
+setTimeout(() => {
+  if (!$('splash').classList.contains('hidden') && !navigator.onLine && lastUser()) {
+    $('splash').classList.add('hidden');
+    state.session = { user: { id: lastUser() } }; state.offlineMode = true;
+    showApp();
+    if (state.bootedFor !== lastUser()) { state.bootedFor = lastUser(); bootApp(); }
+  }
+}, 2500);
+
 // ================= DATA =================
+// Data disimpan juga di HP. Transaksi baru yang dibuat saat offline masuk antrean lalu dikirim saat online.
+const isNetErr = err => !navigator.onLine || /fetch|network|load failed|timeout/i.test((err && err.message) || '');
+const cacheKey = () => 'uangku-cache-' + state.session.user.id;
+const queueKey = () => 'uangku-queue-' + state.session.user.id;
+
+function needOnline(what) {
+  if (navigator.onLine && !state.offlineMode) return true;
+  toast((what || 'Ini') + ' butuh internet. Coba lagi saat online.', 3200);
+  return false;
+}
+function newId() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+  });
+}
+function saveCache() {
+  try {
+    localStorage.setItem(cacheKey(), JSON.stringify({
+      categories: state.categories, subcategories: state.subcategories,
+      transactions: state.transactions, budgets: state.budgets, at: Date.now(),
+    }));
+  } catch (e) {}
+}
+function loadCache() {
+  try {
+    const c = JSON.parse(localStorage.getItem(cacheKey()) || 'null');
+    if (!c) return false;
+    state.categories = c.categories || []; state.subcategories = c.subcategories || [];
+    state.transactions = c.transactions || []; state.budgets = c.budgets || [];
+    return true;
+  } catch (e) { return false; }
+}
+function getQueue() { try { return JSON.parse(localStorage.getItem(queueKey()) || '[]'); } catch (e) { return []; } }
+function setQueue(q) {
+  try { localStorage.setItem(queueKey(), JSON.stringify(q)); return true; }
+  catch (e) { toast('Memori HP penuh, catatan offline gagal disimpan.', 4000); return false; }
+}
+// Gabungkan transaksi yang masih antre ke daftar, ditandai _pending
+function mergePending() {
+  const q = getQueue(), ids = new Set(q.map(x => x.id));
+  const pend = q.map(x => ({ ...x.payload, id: x.id, created_at: x.created_at, _pending: true }));
+  state.transactions = [...pend, ...state.transactions.filter(t => !ids.has(t.id))].sort((a, b) =>
+    b.transaction_date.localeCompare(a.transaction_date) || String(b.created_at || '').localeCompare(String(a.created_at || '')));
+}
+
 async function loadData() {
   const uid = state.session.user.id;
-  const [c, t, b] = await Promise.all([
-    sb.from('categories').select('*').eq('user_id', uid).order('name'),
-    sb.from('transactions').select('*').eq('user_id', uid)
-      .order('transaction_date', { ascending: false }).order('created_at', { ascending: false }),
-    sb.from('budgets').select('*').eq('user_id', uid),
-  ]);
-  const err = c.error || t.error || b.error;
-  if (err) { console.error(err); toast('Gagal memuat data: ' + err.message, 4500); }
-  state.categories = c.data || [];
-  state.transactions = t.data || [];
-  state.budgets = b.data || [];
-  if (state.categories.length) {
-    const s = await sb.from('subcategories').select('*').in('category_id', state.categories.map(x => x.id)).order('name');
-    if (s.error) { console.error(s.error); toast('Gagal memuat subkategori: ' + s.error.message, 4500); }
-    state.subcategories = s.data || [];
-  } else state.subcategories = [];
+  let ok = false;
+  if (navigator.onLine && !state.offlineMode) {
+    try {
+      const [c, t, b] = await Promise.all([
+        sb.from('categories').select('*').eq('user_id', uid).order('name'),
+        sb.from('transactions').select('*').eq('user_id', uid)
+          .order('transaction_date', { ascending: false }).order('created_at', { ascending: false }),
+        sb.from('budgets').select('*').eq('user_id', uid),
+      ]);
+      let err = c.error || t.error || b.error, subs = [];
+      if (!err && (c.data || []).length) {
+        const s = await sb.from('subcategories').select('*').in('category_id', c.data.map(x => x.id)).order('name');
+        err = s.error; subs = s.data || [];
+      }
+      if (!err) {
+        state.categories = c.data || []; state.transactions = t.data || [];
+        state.budgets = b.data || []; state.subcategories = subs;
+        saveCache(); ok = true; state.fromCache = false;
+      } else if (!isNetErr(err)) {
+        console.error(err); toast('Gagal memuat data: ' + err.message, 4500);
+      }
+    } catch (e) { console.error(e); }
+  }
+  if (!ok && loadCache()) state.fromCache = true;
+  mergePending();
+}
+
+function queueTx(id, payload) {
+  const q = getQueue();
+  q.push({ id, payload, created_at: new Date().toISOString() });
+  if (!setQueue(q)) return;
+  closeTxModal(); mergePending(); renderAll(); updateNetUI();
+  toast('Tersimpan di HP. Terkirim otomatis saat online.', 3200);
+}
+async function syncQueue() {
+  if (state.syncing || !state.session || state.offlineMode || !navigator.onLine) return;
+  const q = getQueue();
+  if (!q.length) return;
+  state.syncing = true; updateNetUI();
+  let sent = 0, stopErr = null;
+  try {
+    for (const item of q) {
+      let { error } = await sb.from('transactions').insert({ ...item.payload, id: item.id });
+      if (error && error.code === '23503') {   // kategori sudah dihapus di perangkat lain: simpan tanpa kategori
+        ({ error } = await sb.from('transactions').insert({ ...item.payload, id: item.id, category_id: null, subcategory_id: null }));
+      }
+      if (error && error.code === '23505') error = null;   // sudah pernah terkirim
+      if (error) { if (!isNetErr(error)) stopErr = error; break; }
+      sent++;
+      setQueue(getQueue().filter(x => x.id !== item.id));
+    }
+  } catch (e) { console.error(e); }
+  state.syncing = false;
+  if (sent) { await loadData(); renderAll(); toast(sent + ' catatan offline terkirim'); }
+  if (stopErr && stopErr.message !== state.lastSyncErr) toast('Pengiriman gagal: ' + stopErr.message, 4500);
+  state.lastSyncErr = stopErr ? stopErr.message : null;   // error yang sama tidak diumumkan berulang tiap 30 detik
+  updateNetUI();
+}
+function updateNetUI() {
+  const el = $('net-chip');
+  if (!el) return;
+  const n = state.session ? getQueue().length : 0;
+  if (!navigator.onLine || state.offlineMode) {
+    el.textContent = n ? 'Offline. ' + n + ' catatan menunggu dikirim' : 'Offline. Catatan baru disimpan di HP';
+    el.className = 'netbar off';
+  } else if (n) {
+    el.textContent = state.syncing ? 'Mengirim catatan...' : n + ' catatan menunggu dikirim. Ketuk untuk kirim';
+    el.className = 'netbar pend';
+  } else {
+    el.className = 'netbar hidden';
+  }
 }
 function subcatsOf(catId, favFirst) {
   const subs = state.subcategories.filter(s => s.category_id === catId);
@@ -668,6 +819,7 @@ const txOfMonth = ym => state.transactions.filter(t => ymOf(t.transaction_date) 
 const catById = id => state.categories.find(c => c.id === id);
 
 async function seedDefaults() {
+  if (!needOnline('Membuat kategori')) return;
   const uid = state.session.user.id;
   const { data, error } = await sb.from('categories')
     .insert(DEFAULT_CATS.map(([name, icon, color, type]) => ({ user_id: uid, name, icon, color, type }))).select();
@@ -741,7 +893,7 @@ function txRowHTML(t) {
   const isIn = t.type === 'income';
   return '<div class="tx" onclick="openTxModal(\'' + t.id + '\')">'
     + '<div class="tile" style="background:' + hexA(c.color, .16) + '">' + esc(c.icon) + '</div>'
-    + '<div class="meta"><div class="t1">' + esc(c.name) + '</div>' + (second ? '<div class="t2">' + esc(second) + '</div>' : '') + '</div>'
+    + '<div class="meta"><div class="t1">' + esc(c.name) + '</div>' + (second || t._pending ? '<div class="t2">' + (t._pending ? '<span class="pbadge">Belum terkirim</span>' : '') + esc(second) + '</div>' : '') + '</div>'
     + '<div class="amt num ' + (isIn ? 'in' : '') + '">' + (isIn ? '+' : '−') + nf.format(Number(t.amount)) + '</div></div>';
 }
 function groupHTML(list) {
@@ -830,16 +982,39 @@ async function saveTx() {
     note: $('tf-note').value.trim(), transaction_date: date,
   };
   const btn = $('tf-save'); btn.disabled = true;
-  let error;
   try {
-    if (state.editingId) ({ error } = await sb.from('transactions').update(payload).eq('id', state.editingId));
-    else ({ error } = await sb.from('transactions').insert(payload));
+    const q = getQueue(), pend = state.editingId ? q.find(x => x.id === state.editingId) : null;
+    if (pend) {                         // masih antre: ubah salinan di HP
+      pend.payload = payload;
+      if (setQueue(q)) { closeTxModal(); mergePending(); renderAll(); updateNetUI(); toast('Perubahan disimpan'); syncQueue(); }
+      return;
+    }
+    if (state.editingId) {              // sudah ada di server: butuh internet
+      if (!needOnline('Mengubah transaksi')) return;
+      const { error } = await sb.from('transactions').update(payload).eq('id', state.editingId);
+      if (error) { toast('Gagal menyimpan: ' + error.message, 4500); return; }
+      closeTxModal(); await loadData(); renderAll(); toast('Tersimpan');
+      return;
+    }
+    const id = newId();                 // transaksi baru: boleh offline
+    if (navigator.onLine && !state.offlineMode) {
+      const { error } = await sb.from('transactions').insert({ ...payload, id });
+      if (!error) { closeTxModal(); await loadData(); renderAll(); toast('Tersimpan'); return; }
+      if (!isNetErr(error)) { toast('Gagal menyimpan: ' + error.message, 4500); return; }
+    }
+    queueTx(id, payload);
   } finally { btn.disabled = false; }
-  if (error) { toast('Gagal menyimpan: ' + error.message, 4500); return; }
-  closeTxModal(); await loadData(); renderAll(); toast('Tersimpan');
 }
 async function deleteTx() {
   if (!confirm('Hapus transaksi ini?')) return;
+  const q = getQueue();
+  if (q.some(x => x.id === state.editingId)) {   // belum terkirim: cukup dibuang dari antrean
+    setQueue(q.filter(x => x.id !== state.editingId));
+    state.transactions = state.transactions.filter(t => t.id !== state.editingId);
+    closeTxModal(); renderAll(); updateNetUI(); toast('Terhapus');
+    return;
+  }
+  if (!needOnline('Menghapus transaksi')) return;
   const { error } = await sb.from('transactions').delete().eq('id', state.editingId);
   if (error) { toast('Gagal menghapus: ' + error.message, 4500); return; }
   closeTxModal(); await loadData(); renderAll(); toast('Terhapus');
@@ -937,6 +1112,7 @@ function renderCharts() {
 // ================= STRATEGI =================
 const budgetFor = (catId, ym) => state.budgets.find(b => b.category_id === catId && ymOf(b.month) === ym);
 async function saveBudget(catId) {
+  if (!needOnline('Mengatur anggaran')) { renderStrategy(); return; }
   const amount = Math.max(0, parseFloat($('budget-' + catId).value) || 0);
   const ym = monthKey(new Date()), existing = budgetFor(catId, ym);
   let error;
@@ -991,6 +1167,7 @@ function renderStrategy() {
 // ================= KATEGORI =================
 function toggleCategoryForm() { $('cat-form').classList.toggle('hidden'); }
 async function saveCategory() {
+  if (!needOnline('Menambah kategori')) return;
   const name = $('nf-name').value.trim();
   if (!name) { toast('Isi nama kategori dulu'); return; }
   const { error } = await sb.from('categories').insert({
@@ -1002,12 +1179,14 @@ async function saveCategory() {
   await loadData(); renderAll(); toast('Kategori ditambah');
 }
 async function deleteCategory(id) {
+  if (!needOnline('Menghapus kategori')) return;
   if (!confirm('Hapus kategori ini beserta subkategorinya? Transaksi lama tetap tersimpan.')) return;
   const { error } = await sb.from('categories').delete().eq('id', id);
   if (error) { toast('Gagal menghapus: ' + error.message, 4500); return; }
   await loadData(); renderAll(); toast('Kategori dihapus');
 }
 async function addSubcategory(catId) {
+  if (!needOnline('Menambah subkategori')) return;
   const input = $('sub-' + catId), name = input.value.trim();
   if (!name) return;
   const { error } = await sb.from('subcategories').insert({ category_id: catId, name });
@@ -1015,10 +1194,12 @@ async function addSubcategory(catId) {
   await loadData(); renderCategories(); toast('Subkategori ditambah');
 }
 async function deleteSubcategory(id) {
+  if (!needOnline('Menghapus subkategori')) return;
   await sb.from('subcategories').delete().eq('id', id);
   await loadData(); renderCategories();
 }
 async function toggleFavSub(id) {
+  if (!needOnline('Mengubah favorit')) return;
   const s = state.subcategories.find(x => x.id === id);
   await sb.from('subcategories').update({ is_favorite: !s.is_favorite }).eq('id', id);
   await loadData(); renderCategories();
@@ -1073,11 +1254,54 @@ async function bootApp() {
   $('chart-donut-month').value = monthKey(new Date());
   $('chart-year').value = new Date().getFullYear();
   renderAll();
+  updateNetUI();
+  syncQueue();
 }
 
 applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxModal(); });
 ['auth-email', 'auth-pass'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') submitAuth(); }));
+
+// ================= OFFLINE & PWA =================
+// Keluar dari mode offline: pulihkan sesi login (diulang beberapa kali karena sinyal yang baru kembali sering belum stabil)
+async function leaveOfflineMode() {
+  if (!state.offlineMode || !navigator.onLine || state.leaving) return;
+  state.leaving = true;
+  try {
+    let sess = null;
+    for (let i = 0; i < 3 && !sess && navigator.onLine; i++) {
+      try { const { data } = await sb.auth.getSession(); sess = data && data.session; } catch (e) {}
+      if (!sess) await new Promise(r => setTimeout(r, 1500));
+    }
+    if (sess) {
+      state.session = sess; state.offlineMode = false;
+      try { localStorage.setItem('uangku-last-user', sess.user.id); } catch (e) {}
+    } else if (navigator.onLine) {
+      state.offlineMode = false; state.session = null; state.bootedFor = null;
+      showLogin(); authMsg('Sesi habis. Masuk lagi untuk mengirim catatan yang dibuat saat offline.', 'err');
+      return;
+    } else return;
+  } finally { state.leaving = false; }
+  updateNetUI();
+  await syncQueue();
+  if (state.fromCache) { await loadData(); renderAll(); }
+}
+window.addEventListener('online', async () => {
+  if (state.offlineMode) { await leaveOfflineMode(); return; }
+  updateNetUI();
+  await syncQueue();
+  if (state.fromCache) { await loadData(); renderAll(); }
+});
+window.addEventListener('offline', updateNetUI);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (state.offlineMode) { leaveOfflineMode(); return; }
+  if (state.session) { updateNetUI(); syncQueue(); }
+});
+setInterval(() => { if (state.offlineMode) leaveOfflineMode(); else if (state.session) syncQueue(); }, 30000);
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
 </script>
 </body>
 </html>
