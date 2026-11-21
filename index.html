@@ -14,7 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FFE14D'/%3E%3Ctext x='16' y='24' font-size='22' font-weight='800' text-anchor='middle' fill='%2310163A' font-family='Arial,sans-serif'%3EU%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
 <script>
   // Terapkan tema sebelum halaman tampil supaya tidak berkedip
   (function(){
@@ -40,7 +40,7 @@
     --inc:#2340D9; --exp:#D92D20; --warn:#E5A400;
     --hero-bg:#2340D9; --hero-fg:#FFFFFF; --hero-dim:rgba(255,255,255,.72);
     --hero-bar:rgba(255,255,255,.6); --hero-tick:rgba(255,255,255,.22);
-    --font:'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font:'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
     color-scheme: light;
   }
   [data-theme="dark"]{
@@ -56,7 +56,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
   body{
-    font:400 15px/1.45 var(--font);
+    font:400 15.5px/1.55 var(--font);
     background-color:var(--bg);
     background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
     background-size:22px 22px;
@@ -74,14 +74,14 @@
   ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
 
   /* Judul dan angka besar memakai versi condensed dari font yang sama */
-  .disp{font-stretch:75%;font-weight:750;letter-spacing:-.02em}
+  .disp{font-weight:700;letter-spacing:-.02em}
 
   /* ============ LOGIN ============ */
   .splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:var(--bg)}
   .tape{
     display:inline-block;background:var(--mark);color:var(--mark-fg);
     padding:0 .14em;border-radius:7px;transform:rotate(-1.5deg);
-    font-stretch:75%;font-weight:800;letter-spacing:-.025em;line-height:1.05;
+    font-weight:800;letter-spacing:-.03em;line-height:1.05;
   }
   .splash .tape{font-size:52px}
   .login{min-height:100vh;max-width:420px;margin:0 auto;padding:40px 24px calc(32px + env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:center}
@@ -128,7 +128,7 @@
   .brand{font-size:28px;line-height:1}
   .topbar .actions{display:flex;gap:8px}
   main{flex:1;padding:6px 20px calc(110px + env(safe-area-inset-bottom))}
-  h2.sec{font-size:22px;line-height:1.15;font-weight:700;font-stretch:80%;letter-spacing:-.015em}
+  h2.sec{font-size:22px;line-height:1.15;font-weight:700;letter-spacing:-.015em}
   .sec-head{display:flex;align-items:center;justify-content:space-between;margin:30px 0 4px}
   .sec-sub{font-size:13.5px;color:var(--muted);margin-bottom:8px}
   .link{display:inline-flex;align-items:center;gap:2px;font-size:14px;font-weight:600;color:var(--brand)}
@@ -138,8 +138,8 @@
   /* ============ HERO: sisa aman per hari ============ */
   .hero{background:var(--hero-bg);color:var(--hero-fg);border-radius:28px;padding:22px 22px 20px;overflow:hidden}
   .hero-top{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:500;color:var(--hero-dim)}
-  .hero-amount{font-size:clamp(46px,15vw,68px);line-height:1;margin:12px 0 10px}
-  .hero-amount .cur{font-size:.36em;font-weight:600;letter-spacing:0;margin-right:.3em;opacity:.7;vertical-align:.95em;font-stretch:100%}
+  .hero-amount{font-size:clamp(38px,12.5vw,56px);line-height:1.05;margin:12px 0 10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .hero-amount .cur{font-size:.36em;font-weight:600;letter-spacing:0;margin-right:.3em;opacity:.7;vertical-align:.95em;}
   .hero-sub{font-size:14.5px;color:var(--hero-dim);max-width:34ch}
   .hero-cta{margin-top:14px;height:40px;padding:0 16px;border-radius:10px;background:var(--mark);color:var(--mark-fg);font-weight:700;font-size:14px}
   .strip{display:flex;align-items:flex-end;gap:3px;height:64px;margin-top:24px}
@@ -168,12 +168,12 @@
   .empty .btn-primary{width:auto;margin-top:4px}
 
   .stepper{display:flex;align-items:center;justify-content:space-between;margin:8px 0 18px}
-  .stepper h2{font-size:26px;font-weight:750;font-stretch:75%;letter-spacing:-.02em}
+  .stepper h2{font-size:26px;font-weight:700;letter-spacing:-.02em}
   .pair{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:16px}
   .pair>div{padding:14px 0}
   .pair>div+div{padding-left:18px;border-left:1px solid var(--line)}
   .pair .k{font-size:13px;color:var(--muted)}
-  .pair .v{font-size:26px;font-weight:750;font-stretch:75%;letter-spacing:-.015em}
+  .pair .v{font-size:26px;font-weight:700;letter-spacing:-.015em}
   .pair .v.in{color:var(--inc)}
 
   /* ============ GRAFIK / STRATEGI / KATEGORI ============ */
@@ -185,7 +185,7 @@
   .kpi{display:grid;grid-template-columns:1fr auto;gap:2px 16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
   .kpi .k{font-weight:600}
   .kpi .n{font-size:13.5px;color:var(--muted);grid-column:1}
-  .kpi .v{grid-column:2;grid-row:1 / span 2;font-size:30px;font-weight:750;font-stretch:75%;letter-spacing:-.02em;text-align:right}
+  .kpi .v{grid-column:2;grid-row:1 / span 2;font-size:30px;font-weight:700;letter-spacing:-.02em;text-align:right}
   .v.good{color:var(--inc)} .v.bad{color:var(--exp)} .v.mid{color:var(--warn)}
 
   .bud{padding:14px 0;border-bottom:1px solid var(--line)}
@@ -200,7 +200,7 @@
   .bud .hint b{color:var(--exp);font-weight:600}
 
   .page-head{display:flex;align-items:center;gap:12px;margin:8px 0 16px}
-  .page-head h2{flex:1;font-size:26px;font-weight:750;font-stretch:75%;letter-spacing:-.02em}
+  .page-head h2{flex:1;font-size:26px;font-weight:700;letter-spacing:-.02em}
   .catrow{padding:14px 0;border-bottom:1px solid var(--line)}
   .catrow-top{display:flex;align-items:center;gap:12px}
   .catrow-top .name{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -242,10 +242,10 @@
   @keyframes up{from{transform:translateY(36px);opacity:0}to{transform:none;opacity:1}}
   .grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 14px}
   .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-  .sheet-head h2{font-size:24px;font-weight:750;font-stretch:75%;letter-spacing:-.02em}
+  .sheet-head h2{font-size:24px;font-weight:700;letter-spacing:-.02em}
   .amount-wrap{display:flex;align-items:baseline;gap:8px;margin:20px 0 10px}
   .amount-wrap .cur{font-size:22px;font-weight:600;color:var(--muted)}
-  .amount-wrap input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:56px;line-height:1.1;font-weight:750;font-stretch:75%;letter-spacing:-.02em}
+  .amount-wrap input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:56px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
   .amount-wrap input::placeholder{color:var(--line)}
   .chips{display:flex;gap:8px;flex-wrap:wrap}
   .qchip{padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:14px;font-weight:600}
@@ -283,7 +283,7 @@
   .swipe[data-dir="left"] .swipe-bg{background:var(--exp)}
   [data-theme="dark"] .swipe[data-dir="left"] .swipe-bg{color:#2B0A07}
   .swipe[data-dir="right"] .sa-del,.swipe[data-dir="left"] .sa-edit{visibility:hidden}
-  .swipe.armed .swipe-bg span{transform:scale(1.12);font-weight:750}
+  .swipe.armed .swipe-bg span{transform:scale(1.12);font-weight:700}
   .swipe-hint{font-size:13px;color:var(--muted);margin:14px 0 0}
 
   .toast{display:flex;align-items:center;justify-content:center;gap:14px}
@@ -294,7 +294,7 @@
   .wl-lead{color:var(--muted);margin:6px 0 18px;max-width:44ch}
   .steps{list-style:none;counter-reset:st;display:grid;gap:16px}
   .steps li{counter-increment:st;display:grid;grid-template-columns:28px 1fr;column-gap:12px;align-items:start}
-  .steps li::before{content:counter(st);grid-row:1 / span 2;width:28px;height:28px;border-radius:50%;background:var(--mark);color:var(--mark-fg);display:grid;place-items:center;font-weight:750;font-size:14px}
+  .steps li::before{content:counter(st);grid-row:1 / span 2;width:28px;height:28px;border-radius:50%;background:var(--mark);color:var(--mark-fg);display:grid;place-items:center;font-weight:700;font-size:14px}
   .steps b{font-weight:650;line-height:28px}
   .steps span{grid-column:2;color:var(--muted);font-size:13.5px;margin-top:-2px}
   .welcome .btn-primary{margin-top:22px}
@@ -306,8 +306,44 @@
   .bud .hint.pace-ok{color:var(--inc)}
   .bud .hint.pace-over{color:var(--exp)}
 
+
+  /* ============ GERAK HALUS ============ */
+  :root{--ease:cubic-bezier(.22,.9,.28,1)}
+  html.theming *,html.theming *::before,html.theming *::after{transition:background-color .35s ease,color .35s ease,border-color .35s ease,fill .35s ease,stroke .35s ease !important}
+  .tab-page.enter{animation:pgin .36s var(--ease) both}
+  @keyframes pgin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .tab-page.enter .swipe,.tab-page.enter .card,.tab-page.enter .cat-row,.tab-page.enter .bud{animation:rise .45s var(--ease) both;animation-delay:calc(var(--i,0) * 38ms + 60ms)}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .tab-page.enter .bar>span{animation:barin .8s var(--ease) both .15s}
+  @keyframes barin{from{width:0}}
+  .scrim{animation:fade .22s ease both}
+  .scrim.closing{animation:fadeout .2s ease both;pointer-events:none}
+  .scrim.closing .sheet{animation:down .2s ease-in both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes fadeout{to{opacity:0}}
+  @keyframes down{to{transform:translateY(40px);opacity:0}}
+  .sheet{animation:up .38s var(--ease) both}
+  @keyframes up{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
+  .toast:not(.hidden){animation:toastin .32s var(--ease) both}
+  @keyframes toastin{from{opacity:0;transform:translate(-50%,16px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+  .swipe.leaving{animation:leave .24s ease-in both;overflow:hidden}
+  @keyframes leave{to{opacity:0;max-height:0;transform:translateX(-24px)}}
+  .swipe.leaving{max-height:90px}
+  .tx,.cat,.qchip,.sub,.icon-btn,.tab-btn,.seg button,.btn{transition:transform .18s var(--ease),background-color .18s,border-color .18s,box-shadow .18s,color .18s,opacity .18s}
+  .cat:active,.qchip:active,.sub:active,.icon-btn:active{transform:scale(.95)}
+  .tab-btn:active svg{transform:scale(.88)}
+  .tab-btn svg{transition:transform .25s var(--ease)}
+  .tab-btn.active svg{transform:translateY(-1px) scale(1.08)}
+  .tab-btn.active::before{animation:navin .3s var(--ease) both}
+  @keyframes navin{from{transform:scaleX(.2);opacity:0}to{transform:none;opacity:1}}
+  .fab{transition:transform .25s var(--ease),box-shadow .25s}
+  .fab:active{transform:scale(.9) rotate(90deg)}
+  .bar>span{transition:width .6s var(--ease)}
+  .cat.sel{animation:pop .28s var(--ease)}
+  @keyframes pop{50%{transform:scale(1.06)}}
+
   @media (prefers-reduced-motion: reduce){
-    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+    *,*::before,*::after{animation-duration:.01ms !important;animation-delay:0s !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
   }
 </style>
 </head>
@@ -634,6 +670,7 @@ function applyTheme(t) {
   if (state.session && !$('tab-grafik').classList.contains('hidden')) renderCharts();
 }
 function toggleTheme() {
+  const r = document.documentElement; r.classList.add('theming'); clearTimeout(r._th); r._th = setTimeout(() => r.classList.remove('theming'), 450);
   const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   applyTheme(next);
   try { localStorage.setItem('uangku-theme', next); } catch (e) {}
@@ -895,6 +932,20 @@ function renderStrip(now, tx, daysInMonth) {
   }).join('');
   $('strip-end').textContent = 'Tgl ' + daysInMonth;
 }
+let heroShown = null;
+function setHero(v) {
+  const el = $('hero-amount'), from = heroShown === null ? 0 : heroShown;
+  heroShown = v; cancelAnimationFrame(el._raf);
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (from === v || reduce) { el.innerHTML = moneyHTML(v); return; }
+  const t0 = performance.now(), dur = 650;
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.innerHTML = moneyHTML(k >= 1 ? v : Math.round(from + (v - from) * e));
+    if (k < 1) el._raf = requestAnimationFrame(step);
+  };
+  el._raf = requestAnimationFrame(step);
+}
 function renderDashboard() {
   const now = new Date(), tx = txOfMonth(monthKey(now));
   const inc = sumBy(tx, 'income'), exp = sumBy(tx, 'expense');
@@ -912,16 +963,16 @@ function renderDashboard() {
 
   if (inc === 0) {
     $('hero-label').textContent = 'Sisa aman per hari';
-    $('hero-amount').innerHTML = moneyHTML(0);
+    setHero(0);
     $('hero-sub').textContent = 'Catat pemasukan bulan ini supaya batas harianmu bisa dihitung.';
     $('hero-cta').classList.remove('hidden');
   } else if (remaining < 0) {
     $('hero-label').textContent = 'Bulan ini minus';
-    $('hero-amount').innerHTML = moneyHTML(remaining);
+    setHero(remaining);
     $('hero-sub').textContent = 'Pengeluaran sudah melewati pemasukan. Tunda dulu pengeluaran yang belum perlu.';
   } else {
     $('hero-label').textContent = 'Sisa aman per hari';
-    $('hero-amount').innerHTML = moneyHTML(Math.floor(remaining / Math.max(daysLeft, 1)));
+    setHero(Math.floor(remaining / Math.max(daysLeft, 1)));
     $('hero-sub').textContent = spentToday > 0 ? 'Hari ini sudah keluar ' + fmt(spentToday) + '.' : 'Belum ada pengeluaran hari ini.';
   }
   renderStrip(now, tx, daysInMonth);
@@ -1017,10 +1068,16 @@ function openTxModal(txId, presetType) {
     state.selectedCat = editing.category_id; state.selectedSub = editing.subcategory_id || null;
     renderCatChips(); renderSubChips();
   }
+  clearTimeout($('tx-modal')._c); $('tx-modal').classList.remove('closing');
   $('tx-modal').classList.remove('hidden');
   if (!editing) setTimeout(() => $('tf-amount').focus(), 60);
 }
-function closeTxModal() { $('tx-modal').classList.add('hidden'); }
+function closeTxModal() {
+  const m = $('tx-modal');
+  if (m.classList.contains('hidden') || m.classList.contains('closing')) return;
+  m.classList.add('closing');
+  m._c = setTimeout(() => { m.classList.add('hidden'); m.classList.remove('closing'); }, 200);
+}
 
 async function saveTx() {
   const amount = getAmount(), date = $('tf-date').value;
@@ -1058,11 +1115,18 @@ async function saveTx() {
 }
 // Hapus tanpa pop-up konfirmasi. Sebagai gantinya muncul "Urungkan" selama beberapa detik.
 const canRemoveTx = id => getQueue().some(x => x.id === id) || (navigator.onLine && !state.offlineMode);
+function collapseRow(id) {
+  const el = document.querySelector('.swipe[data-id="' + id + '"]');
+  if (!el) return Promise.resolve();
+  el.classList.add('leaving');
+  return new Promise(r => setTimeout(r, 230));
+}
 async function removeTx(id) {
   const row = state.transactions.find(t => t.id === id);
   if (!row) return false;
   const q = getQueue(), queued = q.find(x => x.id === id);
   if (queued) {                                   // belum terkirim: cukup dibuang dari antrean
+    await collapseRow(id);
     setQueue(q.filter(x => x.id !== id));
     state.transactions = state.transactions.filter(t => t.id !== id);
     renderAll(); updateNetUI();
@@ -1075,6 +1139,7 @@ async function removeTx(id) {
   if (!needOnline('Menghapus transaksi')) return false;
   const { error } = await sb.from('transactions').delete().eq('id', id);
   if (error) { toast(isNetErr(error) ? 'Tidak ada koneksi. Belum terhapus.' : 'Gagal menghapus: ' + error.message, 4500); return false; }
+  await collapseRow(id);
   await loadData(); renderAll();
   toast('Terhapus', 6000, { label: 'Urungkan', fn: () => restoreTx(row) });
   return true;
@@ -1108,7 +1173,7 @@ const centerText = {
     if (!opt || !opt.text) return;
     const a = chart.chartArea, c = chart.ctx, x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2;
     c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillStyle = cssv('--ink'); c.font = '750 26px ' + cssv('--font'); c.fillText(opt.text, x, y - 6);
+    c.fillStyle = cssv('--ink'); c.font = '700 26px ' + cssv('--font'); c.fillText(opt.text, x, y - 6);
     c.fillStyle = cssv('--muted'); c.font = '500 12px ' + cssv('--font'); c.fillText(opt.sub || '', x, y + 16);
     c.restore();
   },
@@ -1325,9 +1390,17 @@ function exportCSV() {
 }
 
 // ================= NAVIGASI & BOOT =================
+function playEnter(page) {
+  page.classList.remove('enter');
+  page.querySelectorAll('.swipe,.card,.cat-row,.bud').forEach((el, i) => el.style.setProperty('--i', Math.min(i, 9)));
+  void page.offsetWidth;
+  page.classList.add('enter');
+  clearTimeout(page._en); page._en = setTimeout(() => page.classList.remove('enter'), 1200);
+}
 function switchTab(tab) {
   document.querySelectorAll('.tab-page').forEach(p => p.classList.add('hidden'));
   $('tab-' + tab).classList.remove('hidden');
+  playEnter($('tab-' + tab));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   window.scrollTo({ top: 0 });
   if (tab === 'grafik') setTimeout(renderCharts, 50);
@@ -1339,6 +1412,7 @@ async function bootApp() {
   $('chart-donut-month').value = monthKey(new Date());
   $('chart-year').value = new Date().getFullYear();
   renderAll();
+  playEnter($('tab-dashboard') || document.querySelector('.tab-page:not(.hidden)'));
   updateNetUI();
   syncQueue();
 }

@@ -1,14 +1,14 @@
 /* UangKu service worker
    Fungsinya: menyimpan tampilan app (halaman, library, font) supaya app bisa dibuka tanpa internet.
    Data keuangan dari Supabase TIDAK pernah disimpan di sini. App menyimpannya sendiri di HP.
-   Setiap kali kamu mengubah index.html, naikkan angka VERSION di bawah (v1 menjadi v2, dst.)
-   supaya HP yang sudah memasang app ikut memperbarui salinan lamanya. */
+   Naikkan angka VERSION di bawah (v2 menjadi v3, dst.) kalau kamu mengganti font, ikon, atau daftar CORE.
+   Mengubah index.html saja tidak perlu: halaman utama selalu diambil yang terbaru saat internet ada. */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = 'uangku-' + VERSION;
 
 const CORE = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
-const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&display=swap';
+const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap';
 const LIBS = [
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js',
